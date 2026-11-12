@@ -1,0 +1,21 @@
+<div class="section section--full-width gift-banner">
+  {% content_for 'blocks' %}
+</div>
+
+{% schema %}
+{
+  "name": "Gift banner",
+  "disabled_on": {
+    "groups": ["header", "footer"]
+  },
+  "blocks": [
+    { "type": "@theme" }
+  ],
+  "settings": [],
+  "presets": [
+    {
+      "name": "Gift banner"
+    }
+  ]
+}
+{% endschema %}
