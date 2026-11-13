@@ -1,13 +1,10 @@
 {% liquid
-  assign bar_id = section.id | append: '-bar'
   assign strip_id = section.id | append: '-strip'
+  assign desktop_image = section.settings.image
+  assign mobile_image = section.settings.image_mobile
 
   if section.settings.background_color != blank
     render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
-  endif
-
-  if section.settings.bar_background != blank
-    render 'contrast-override', background_color: section.settings.bar_background, section_id: bar_id, preset: 'ui'
   endif
 
   if section.settings.strip_background != blank
@@ -22,7 +19,7 @@
 <div
   class="
     section
-    section--{{ section.settings.section_width }}
+    section--full-width
     gift-banner
     {% if section.settings.background_color != blank %}color-custom-{{ section.id }}{% endif %}
     spacing-style
@@ -30,48 +27,64 @@
   data-testid="gift-banner"
   style="
     {% render 'spacing-style', settings: section.settings %}
-    {% if section.settings.section_height != 'auto' %}
-      --gift-banner-ratio: {{ section.settings.section_height }};
-    {% elsif section.settings.image != blank %}
-      --gift-banner-ratio: {{ section.settings.image.aspect_ratio }};
+    {% if desktop_image != blank %}
+      --gift-banner-ratio: {{ desktop_image.aspect_ratio }};
     {% endif %}
+    --gift-cta-hover-background: {{ section.settings.button_hover_background }};
+    --gift-cta-hover-text: {{ section.settings.button_hover_text }};
   "
 >
-  {%- comment -%} Top bar — static blocks, so position is fixed but content is not {%- endcomment -%}
-  <div class="gift-banner__bar{% if section.settings.bar_background != blank %} color-custom-{{ bar_id }}{% endif %}">
-    <div class="gift-banner__bar-start">
-      {% content_for 'block', type: 'text', id: 'brand' %}
-    </div>
-    <div class="gift-banner__bar-end">
-      {% content_for 'block', type: 'text', id: 'tagline' %}
-      {% content_for 'block', type: 'button', id: 'bar-cta' %}
-    </div>
-  </div>
-
-  {%- comment -%} Stage — illustration behind freely composable blocks {%- endcomment -%}
   <div class="gift-banner__stage">
-    {% if section.settings.toggle_overlay %}
-      {% render 'overlay', settings: section.settings, layer: 'var(--layer-flat)' %}
-    {% endif %}
-
-    {% if section.settings.image != blank %}
-      {% render 'image', image: section.settings.image, class: 'gift-banner__media' %}
-    {% else %}
-      {{ 'hero-apparel-1' | placeholder_svg_tag: 'gift-banner__media' }}
-    {% endif %}
+    {%- comment -%}
+      One <picture>, so only the image for the current breakpoint is downloaded.
+      Desktop: fills the stage behind the content. Mobile: sits below the text.
+    {%- endcomment -%}
+    <div class="gift-banner__media">
+      {% if desktop_image != blank %}
+        <picture>
+          {% if mobile_image != blank %}
+            <source
+              media="(max-width: 749px)"
+              srcset="
+                {{ mobile_image | image_url: width: 550 }} 550w,
+                {{ mobile_image | image_url: width: 750 }} 750w,
+                {{ mobile_image | image_url: width: 1100 }} 1100w,
+                {{ mobile_image | image_url: width: 1500 }} 1500w
+              "
+              sizes="100vw"
+              width="{{ mobile_image.width }}"
+              height="{{ mobile_image.height }}"
+            >
+          {% endif %}
+          {{
+            desktop_image
+            | image_url: width: 3840
+            | image_tag:
+              class: 'gift-banner__image',
+              widths: '750, 1100, 1440, 1920, 2880, 3840',
+              sizes: '100vw',
+              loading: 'eager',
+              fetchpriority: 'high',
+              alt: desktop_image.alt
+          }}
+        </picture>
+      {% else %}
+        {{ 'hero-apparel-1' | placeholder_svg_tag: 'gift-banner__image' }}
+      {% endif %}
+    </div>
 
     <div
       class="gift-banner__content gap-style"
-      style="
-        {% render 'gap-style', value: section.settings.content_gap %}
-        --gift-banner-content-align: {{ section.settings.content_alignment }};
-      "
+      style="{% render 'gap-style', value: section.settings.content_gap %}"
     >
       {% content_for 'blocks' %}
     </div>
+
+    <div class="gift-banner__cta gift-cta">
+      {% content_for 'block', type: 'button', id: 'cta' %}
+    </div>
   </div>
 
-  {%- comment -%} Bottom strip {%- endcomment -%}
   <div class="gift-banner__strip{% if section.settings.strip_background != blank %} color-custom-{{ strip_id }}{% endif %}">
     {% content_for 'block', type: 'text', id: 'strip' %}
   </div>
@@ -79,39 +92,36 @@
 
 {% stylesheet %}
   .gift-banner {
-    display: flex;
-    flex-direction: column;
+    /* 67px and 52px at the 1440 frame, scaling down on smaller screens */
+    --gift-banner-inset: clamp(1.25rem, 4.65vw, 4.1875rem);
+    --gift-banner-bottom: clamp(1.5rem, 3.6vw, 3.25rem);
+    --gift-cta-height: 50px;
   }
 
-  /* Top bar */
-  .gift-banner__bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: var(--gap-md);
-    padding: var(--padding-sm) var(--padding-md);
-  }
-
-  .gift-banner__bar-end {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--gap-md);
-  }
-
-  /* Stage */
+  /* Desktop: illustration fills the stage, content anchored bottom-left */
   .gift-banner__stage {
     position: relative;
-    aspect-ratio: var(--gift-banner-ratio, 16 / 9);
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 1fr auto auto;
+    aspect-ratio: var(--gift-banner-ratio, 1440 / 780);
+    padding: 0 var(--gift-banner-inset) var(--gift-banner-bottom);
     overflow: hidden;
   }
 
   .gift-banner__media {
     position: absolute;
     inset: 0;
+  }
+
+  .gift-banner__media picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .gift-banner__image {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -119,38 +129,65 @@
   }
 
   .gift-banner__content {
+    grid-row: 2;
     position: relative;
     z-index: var(--layer-flat);
     display: flex;
     flex-direction: column;
-    align-items: var(--gift-banner-content-align, flex-start);
+    align-items: flex-start;
     gap: var(--gap);
-    width: 100%;
-    max-width: 34rem;
-    padding: var(--padding-lg);
+    max-width: 32rem;
   }
 
-  /* Bottom strip */
+  .gift-banner__cta {
+    grid-row: 3;
+    position: relative;
+    z-index: var(--layer-flat);
+    justify-self: start;
+    margin-block-start: var(--padding-2xl);
+  }
+
   .gift-banner__strip {
+    display: flex;
+    justify-content: center;
     padding: var(--padding-xs) var(--padding-md);
-    text-align: center;
   }
 
+  /* Mobile: text centred above the illustration, button over its lower edge */
   @media screen and (max-width: 749px) {
-    .gift-banner__bar {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: var(--gap-2xs);
-    }
-
     .gift-banner__stage {
+      grid-template-rows: auto auto;
       aspect-ratio: auto;
-      min-height: 60vh;
+      padding: 0;
     }
 
     .gift-banner__content {
+      --text-align-default: center;
+
+      grid-row: 1;
+      align-items: center;
       max-width: none;
-      padding: var(--padding-md);
+      padding: var(--padding-2xl) var(--padding-md) var(--padding-lg);
+    }
+
+    .gift-banner__media {
+      position: relative;
+      inset: auto;
+      grid-row: 2;
+      grid-column: 1;
+    }
+
+    .gift-banner__media picture,
+    .gift-banner__image {
+      height: auto;
+    }
+
+    .gift-banner__cta {
+      grid-row: 2;
+      grid-column: 1;
+      align-self: end;
+      justify-self: center;
+      margin-block: 0 var(--padding-2xl);
     }
   }
 {% endstylesheet %}
@@ -162,89 +199,31 @@
     "groups": ["header", "footer"]
   },
   "blocks": [
-    { "type": "@theme" },
-    { "type": "text" },
-    { "type": "button" },
-    { "type": "group" },
-    { "type": "spacer" }
+    {
+      "type": "@theme"
+    },
+    {
+      "type": "text"
+    },
+    {
+      "type": "group"
+    },
+    {
+      "type": "spacer"
+    }
   ],
   "settings": [
     {
       "type": "image_picker",
       "id": "image",
       "label": "t:settings.image",
-      "info": "Line-art illustration behind the content."
+      "info": "Desktop illustration. The banner takes its shape from this image."
     },
     {
-      "type": "checkbox",
-      "id": "toggle_overlay",
-      "label": "t:settings.media_overlay",
-      "default": false
-    },
-    {
-      "type": "color",
-      "id": "overlay_color",
-      "label": "t:settings.overlay_color",
-      "alpha": true,
-      "default": "#00000026",
-      "visible_if": "{{ section.settings.toggle_overlay }}"
-    },
-    {
-      "type": "select",
-      "id": "overlay_style",
-      "label": "t:settings.overlay_style",
-      "options": [
-        { "value": "solid", "label": "t:options.solid" },
-        { "value": "gradient", "label": "t:options.gradient" }
-      ],
-      "default": "solid",
-      "visible_if": "{{ section.settings.toggle_overlay }}"
-    },
-    {
-      "type": "select",
-      "id": "gradient_direction",
-      "label": "t:settings.gradient_direction",
-      "options": [
-        { "value": "to top", "label": "t:options.up" },
-        { "value": "to bottom", "label": "t:options.down" }
-      ],
-      "default": "to top",
-      "visible_if": "{{ section.settings.toggle_overlay and section.settings.overlay_style == 'gradient' }}"
-    },
-
-    { "type": "header", "content": "t:content.section_layout" },
-    {
-      "type": "select",
-      "id": "section_width",
-      "label": "t:settings.width",
-      "options": [
-        { "value": "page-width", "label": "t:options.page" },
-        { "value": "full-width", "label": "t:options.full" }
-      ],
-      "default": "full-width"
-    },
-    {
-      "type": "select",
-      "id": "section_height",
-      "label": "t:settings.height",
-      "options": [
-        { "value": "auto", "label": "t:options.auto" },
-        { "value": "21 / 9", "label": "t:options.small" },
-        { "value": "16 / 9", "label": "t:options.medium" },
-        { "value": "4 / 3", "label": "t:options.large" }
-      ],
-      "default": "16 / 9"
-    },
-    {
-      "type": "select",
-      "id": "content_alignment",
-      "label": "Content alignment",
-      "options": [
-        { "value": "flex-start", "label": "Left" },
-        { "value": "center", "label": "Center" },
-        { "value": "flex-end", "label": "Right" }
-      ],
-      "default": "center"
+      "type": "image_picker",
+      "id": "image_mobile",
+      "label": "Mobile image",
+      "info": "Optional. Shown under the text on small screens."
     },
     {
       "type": "range",
@@ -256,28 +235,38 @@
       "unit": "px",
       "default": 24
     },
-
-    { "type": "header", "content": "t:content.colors" },
+    {
+      "type": "header",
+      "content": "t:content.colors"
+    },
     {
       "type": "color",
       "id": "background_color",
       "label": "t:settings.background_color",
-      "placeholder": "t:settings.default"
-    },
-    {
-      "type": "color",
-      "id": "bar_background",
-      "label": "Top bar background",
-      "placeholder": "t:settings.default"
+      "default": "#FFFFFF"
     },
     {
       "type": "color",
       "id": "strip_background",
       "label": "Bottom strip background",
-      "placeholder": "t:settings.default"
+      "default": "#F5F5F5"
     },
-
-    { "type": "header", "content": "t:content.padding" },
+    {
+      "type": "color",
+      "id": "button_hover_background",
+      "label": "Button hover background",
+      "default": "#FFF544"
+    },
+    {
+      "type": "color",
+      "id": "button_hover_text",
+      "label": "Button hover text",
+      "default": "#000000"
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
     {
       "type": "range",
       "id": "padding-block-start",
@@ -303,60 +292,28 @@
     {
       "name": "Gift banner",
       "settings": {
-        "section_width": "full-width",
-        "section_height": "16 / 9",
-        "content_alignment": "center",
-        "content_gap": 24,
-        "bar_background": "#f4f4f4",
-        "strip_background": "#f4f4f4"
+        "content_gap": 24
       },
       "blocks": {
-        "brand": {
-          "type": "text",
-          "name": "Brand name",
-          "static": true,
-          "settings": {
-            "text": "<p>TISSO VISON</p>",
-            "type_preset": "h6",
-            "case": "uppercase"
-          }
-        },
-        "tagline": {
-          "type": "text",
-          "name": "Tagline",
-          "static": true,
-          "settings": {
-            "text": "<p>Find the ideal gift for your loved ones.</p>",
-            "type_preset": "paragraph"
-          }
-        },
-        "bar-cta": {
-          "type": "button",
-          "name": "Top bar button",
-          "static": true,
-          "settings": {
-            "label": "CHOOSE GIFT",
-            "style_class": "button"
-          }
-        },
         "heading": {
           "type": "text",
           "settings": {
             "text": "<p>The Gift Guide</p>",
-            "type_preset": "h1",
-            "max_width": "narrow"
+            "type_preset": "h1"
           }
         },
         "body": {
           "type": "text",
           "settings": {
             "text": "<p>Discover Joy: Your Ultimate Holiday Gift Destination.</p>",
-            "type_preset": "rte",
+            "type_preset": "paragraph",
             "max_width": "narrow"
           }
         },
         "cta": {
           "type": "button",
+          "name": "Button",
+          "static": true,
           "settings": {
             "label": "SHOP NOW",
             "style_class": "button"
@@ -368,14 +325,16 @@
           "static": true,
           "settings": {
             "text": "<p>SUSTAINABLE, ETHICALLY MADE CLOTHES IN SIZES XXS TO 6XL</p>",
-            "type_preset": "h6",
+            "type_preset": "custom",
+            "font": "var(--font-body--family)",
+            "font_size": "0.75rem",
             "case": "uppercase",
             "width": "100%",
             "alignment": "center"
           }
         }
       },
-      "block_order": ["heading", "body", "cta"]
+      "block_order": ["heading", "body"]
     }
   ]
 }
