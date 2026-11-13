@@ -1,0 +1,157 @@
+{% liquid
+  assign item_product = block.settings.product
+  assign marker_label = 'accessibility.show_product_details' | t: product_name: item_product.title
+%}
+
+<gift-grid-item-component
+  class="gift-grid__item"
+  style="
+    --gift-grid-marker-bg: {{ section.settings.marker_background }};
+    --gift-grid-marker-fg: {{ section.settings.marker_icon }};
+  "
+  data-id="{{ block.id }}"
+  {{ block.shopify_attributes }}
+>
+  {% if block.settings.image != blank %}
+    {{
+      block.settings.image
+      | image_url: width: 1600
+      | image_tag:
+        class: 'gift-grid__image',
+        widths: '300, 450, 600, 900, 1200, 1600',
+        sizes: '(min-width: 750px) 33vw, 50vw',
+        loading: 'lazy',
+        alt: block.settings.image.alt
+    }}
+  {% else %}
+    {{ 'lifestyle-1' | placeholder_svg_tag: 'gift-grid__image' }}
+  {% endif %}
+
+  {% if item_product != blank %}
+    <button
+      class="gift-grid__marker"
+      type="button"
+      ref="trigger"
+      on:click="/openQuickAdd"
+      aria-haspopup="dialog"
+      aria-label="{{ marker_label }}"
+      style="
+        {%- comment -%}
+          Intentionally physical: x/y are coordinates on the image,
+          which does not mirror in RTL.
+        {%- endcomment -%}
+        left: {{ block.settings.x-position }}%;
+        top: {{ block.settings.y-position }}%;
+      "
+    >
+      <span aria-hidden="true">+</span>
+    </button>
+
+    {%- comment -%}
+      Rendered but hidden. The marker is the visible trigger; this supplies
+      the quick-add component whose handleClick opens the modal.
+    {%- endcomment -%}
+    <div class="gift-grid__quick-add">
+      {% render 'quick-add', product: item_product, section_id: section.id, block: block %}
+    </div>
+  {% endif %}
+</gift-grid-item-component>
+
+{% stylesheet %}
+  .gift-grid__item {
+    position: relative;
+    display: block;
+    aspect-ratio: var(--gift-grid-ratio, 1 / 1);
+    overflow: hidden;
+    background: rgb(var(--color-foreground-rgb) / var(--opacity-10));
+  }
+
+  .gift-grid__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .gift-grid__marker {
+    position: absolute;
+    translate: -50% -50%;
+    z-index: var(--layer-flat);
+    width: var(--gift-grid-marker-size, 36px);
+    height: var(--gift-grid-marker-size, 36px);
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--gift-grid-marker-bg, var(--color-background));
+    color: var(--gift-grid-marker-fg, var(--color-foreground));
+    font-size: var(--font-size--md);
+    line-height: 1;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    box-shadow: 0 1px 6px rgb(0 0 0 / 0.16);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .gift-grid__marker {
+      transition: scale var(--animation-speed) var(--ease-out-cubic);
+    }
+
+    .gift-grid__marker:is(:hover, :focus-visible) {
+      scale: 1.12;
+    }
+  }
+
+  .gift-grid__marker:focus-visible {
+    outline: var(--focus-outline-width) solid currentcolor;
+    outline-offset: var(--focus-outline-offset);
+  }
+
+  /* The quick-add button itself is never shown; the marker stands in for it. */
+  .gift-grid__quick-add {
+    display: none;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Grid image",
+  "tag": null,
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "t:settings.image"
+    },
+    {
+      "type": "product",
+      "id": "product",
+      "label": "t:settings.product",
+      "info": "Opens in the quick-add popup. Without a product, no marker is shown."
+    },
+    {
+      "type": "range",
+      "id": "x-position",
+      "label": "t:settings.x_position",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 50
+    },
+    {
+      "type": "range",
+      "id": "y-position",
+      "label": "t:settings.y_position",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 50
+    }
+  ],
+  "presets": [
+    { "name": "Grid image" }
+  ]
+}
+{% endschema %}
