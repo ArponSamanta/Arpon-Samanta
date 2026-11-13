@@ -72,6 +72,42 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
+
+  /* ---- Quick-add modal, tuned to the Figma popup ---- */
+
+.quick-add-modal {
+  /* Figma: measure the dialog width and corner radius in Inspect */
+  --maximum-width-dialog: 900px;
+}
+
+.quick-add-modal__content {
+  /* Image left, details right, as in the frame */
+  align-items: stretch;
+}
+
+.quick-add-modal__content .product-details {
+  gap: var(--gap-md);
+  padding: var(--padding-lg);
+}
+
+.quick-add-modal__content .view-product-title {
+  font-size: var(--font-size--2xl);
+}
+
+/* Full-width add to cart, per the frame */
+.quick-add-modal__content .product-details .buy-buttons-block {
+  width: 100%;
+}
+
+.quick-add-modal__content product-form-component .button {
+  width: 100%;
+  justify-content: center;
+}
+
+.quick-add-modal__close {
+  /* Figma: square close button, not the default round one */
+  border-radius: 0;
+}
 {% endstylesheet %}
 
 {% schema %}
