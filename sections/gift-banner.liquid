@@ -1,6 +1,44 @@
-<div class="section section--full-width gift-banner">
-  {%- comment -%} Top bar: static blocks, so position is fixed but content is editable {%- endcomment -%}
-  <div class="gift-banner__bar">
+{% liquid
+  assign bar_id = section.id | append: '-bar'
+  assign strip_id = section.id | append: '-strip'
+
+  if section.settings.background_color != blank
+    render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
+  endif
+
+  if section.settings.bar_background != blank
+    render 'contrast-override', background_color: section.settings.bar_background, section_id: bar_id, preset: 'ui'
+  endif
+
+  if section.settings.strip_background != blank
+    render 'contrast-override', background_color: section.settings.strip_background, section_id: strip_id, preset: 'ui'
+  endif
+%}
+
+<div
+  class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
+></div>
+
+<div
+  class="
+    section
+    section--{{ section.settings.section_width }}
+    gift-banner
+    {% if section.settings.background_color != blank %}color-custom-{{ section.id }}{% endif %}
+    spacing-style
+  "
+  data-testid="gift-banner"
+  style="
+    {% render 'spacing-style', settings: section.settings %}
+    {% if section.settings.section_height != 'auto' %}
+      --gift-banner-ratio: {{ section.settings.section_height }};
+    {% elsif section.settings.image != blank %}
+      --gift-banner-ratio: {{ section.settings.image.aspect_ratio }};
+    {% endif %}
+  "
+>
+  {%- comment -%} Top bar — static blocks, so position is fixed but content is not {%- endcomment -%}
+  <div class="gift-banner__bar{% if section.settings.bar_background != blank %} color-custom-{{ bar_id }}{% endif %}">
     <div class="gift-banner__bar-start">
       {% content_for 'block', type: 'text', id: 'brand' %}
     </div>
@@ -10,7 +48,33 @@
     </div>
   </div>
 
-  {% content_for 'blocks' %}
+  {%- comment -%} Stage — illustration behind freely composable blocks {%- endcomment -%}
+  <div class="gift-banner__stage">
+    {% if section.settings.toggle_overlay %}
+      {% render 'overlay', settings: section.settings, layer: 'var(--layer-flat)' %}
+    {% endif %}
+
+    {% if section.settings.image != blank %}
+      {% render 'image', image: section.settings.image, class: 'gift-banner__media' %}
+    {% else %}
+      {{ 'hero-apparel-1' | placeholder_svg_tag: 'gift-banner__media' }}
+    {% endif %}
+
+    <div
+      class="gift-banner__content gap-style"
+      style="
+        {% render 'gap-style', value: section.settings.content_gap %}
+        --gift-banner-content-align: {{ section.settings.content_alignment }};
+      "
+    >
+      {% content_for 'blocks' %}
+    </div>
+  </div>
+
+  {%- comment -%} Bottom strip {%- endcomment -%}
+  <div class="gift-banner__strip{% if section.settings.strip_background != blank %} color-custom-{{ strip_id }}{% endif %}">
+    {% content_for 'block', type: 'text', id: 'strip' %}
+  </div>
 </div>
 
 {% stylesheet %}
@@ -19,6 +83,7 @@
     flex-direction: column;
   }
 
+  /* Top bar */
   .gift-banner__bar {
     display: flex;
     align-items: center;
@@ -34,6 +99,60 @@
     flex-wrap: wrap;
     gap: var(--gap-md);
   }
+
+  /* Stage */
+  .gift-banner__stage {
+    position: relative;
+    aspect-ratio: var(--gift-banner-ratio, 16 / 9);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .gift-banner__media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .gift-banner__content {
+    position: relative;
+    z-index: var(--layer-flat);
+    display: flex;
+    flex-direction: column;
+    align-items: var(--gift-banner-content-align, flex-start);
+    gap: var(--gap);
+    width: 100%;
+    max-width: 34rem;
+    padding: var(--padding-lg);
+  }
+
+  /* Bottom strip */
+  .gift-banner__strip {
+    padding: var(--padding-xs) var(--padding-md);
+    text-align: center;
+  }
+
+  @media screen and (max-width: 749px) {
+    .gift-banner__bar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--gap-2xs);
+    }
+
+    .gift-banner__stage {
+      aspect-ratio: auto;
+      min-height: 60vh;
+    }
+
+    .gift-banner__content {
+      max-width: none;
+      padding: var(--padding-md);
+    }
+  }
 {% endstylesheet %}
 
 {% schema %}
@@ -43,12 +162,154 @@
     "groups": ["header", "footer"]
   },
   "blocks": [
-    { "type": "@theme" }
+    { "type": "@theme" },
+    { "type": "text" },
+    { "type": "button" },
+    { "type": "group" },
+    { "type": "spacer" }
   ],
-  "settings": [],
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "t:settings.image",
+      "info": "Line-art illustration behind the content."
+    },
+    {
+      "type": "checkbox",
+      "id": "toggle_overlay",
+      "label": "t:settings.media_overlay",
+      "default": false
+    },
+    {
+      "type": "color",
+      "id": "overlay_color",
+      "label": "t:settings.overlay_color",
+      "alpha": true,
+      "default": "#00000026",
+      "visible_if": "{{ section.settings.toggle_overlay }}"
+    },
+    {
+      "type": "select",
+      "id": "overlay_style",
+      "label": "t:settings.overlay_style",
+      "options": [
+        { "value": "solid", "label": "t:options.solid" },
+        { "value": "gradient", "label": "t:options.gradient" }
+      ],
+      "default": "solid",
+      "visible_if": "{{ section.settings.toggle_overlay }}"
+    },
+    {
+      "type": "select",
+      "id": "gradient_direction",
+      "label": "t:settings.gradient_direction",
+      "options": [
+        { "value": "to top", "label": "t:options.up" },
+        { "value": "to bottom", "label": "t:options.down" }
+      ],
+      "default": "to top",
+      "visible_if": "{{ section.settings.toggle_overlay and section.settings.overlay_style == 'gradient' }}"
+    },
+
+    { "type": "header", "content": "t:content.section_layout" },
+    {
+      "type": "select",
+      "id": "section_width",
+      "label": "t:settings.width",
+      "options": [
+        { "value": "page-width", "label": "t:options.page" },
+        { "value": "full-width", "label": "t:options.full" }
+      ],
+      "default": "full-width"
+    },
+    {
+      "type": "select",
+      "id": "section_height",
+      "label": "t:settings.height",
+      "options": [
+        { "value": "auto", "label": "t:options.auto" },
+        { "value": "21 / 9", "label": "t:options.small" },
+        { "value": "16 / 9", "label": "t:options.medium" },
+        { "value": "4 / 3", "label": "t:options.large" }
+      ],
+      "default": "16 / 9"
+    },
+    {
+      "type": "select",
+      "id": "content_alignment",
+      "label": "Content alignment",
+      "options": [
+        { "value": "flex-start", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "flex-end", "label": "Right" }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "range",
+      "id": "content_gap",
+      "label": "t:settings.vertical_gap",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "default": 24
+    },
+
+    { "type": "header", "content": "t:content.colors" },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "t:settings.background_color",
+      "placeholder": "t:settings.default"
+    },
+    {
+      "type": "color",
+      "id": "bar_background",
+      "label": "Top bar background",
+      "placeholder": "t:settings.default"
+    },
+    {
+      "type": "color",
+      "id": "strip_background",
+      "label": "Bottom strip background",
+      "placeholder": "t:settings.default"
+    },
+
+    { "type": "header", "content": "t:content.padding" },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    }
+  ],
   "presets": [
     {
       "name": "Gift banner",
+      "settings": {
+        "section_width": "full-width",
+        "section_height": "16 / 9",
+        "content_alignment": "center",
+        "content_gap": 24,
+        "bar_background": "#f4f4f4",
+        "strip_background": "#f4f4f4"
+      },
       "blocks": {
         "brand": {
           "type": "text",
@@ -77,8 +338,44 @@
             "label": "CHOOSE GIFT",
             "style_class": "button"
           }
+        },
+        "heading": {
+          "type": "text",
+          "settings": {
+            "text": "<p>The Gift Guide</p>",
+            "type_preset": "h1",
+            "max_width": "narrow"
+          }
+        },
+        "body": {
+          "type": "text",
+          "settings": {
+            "text": "<p>Discover Joy: Your Ultimate Holiday Gift Destination.</p>",
+            "type_preset": "rte",
+            "max_width": "narrow"
+          }
+        },
+        "cta": {
+          "type": "button",
+          "settings": {
+            "label": "SHOP NOW",
+            "style_class": "button"
+          }
+        },
+        "strip": {
+          "type": "text",
+          "name": "Bottom strip",
+          "static": true,
+          "settings": {
+            "text": "<p>SUSTAINABLE, ETHICALLY MADE CLOTHES IN SIZES XXS TO 6XL</p>",
+            "type_preset": "h6",
+            "case": "uppercase",
+            "width": "100%",
+            "alignment": "center"
+          }
         }
-      }
+      },
+      "block_order": ["heading", "body", "cta"]
     }
   ]
 }
