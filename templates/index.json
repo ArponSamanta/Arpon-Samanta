@@ -140,7 +140,7 @@
           "static": true,
           "settings": {
             "label": "CHOOSE GIFT",
-            "link": "",
+            "link": "shopify://products/dark-winter-jacket",
             "open_in_new_tab": false,
             "style_class": "button",
             "custom_button_background": "{{ settings.color_palette.foreground }}",
