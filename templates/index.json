@@ -120,9 +120,9 @@
         "media_layout": "rows",
         "image_mobile": "shopify://shop_images/Frame.svg",
         "content_gap": 24,
-        "background_color": "#FFFFFF",
-        "strip_background": "#F5F5F5",
-        "button_hover_background": "#FFF544",
+        "background_color": "#ffffff",
+        "strip_background": "#f5f5f5",
+        "button_hover_background": "#fff544",
         "button_hover_text": "#000000",
         "padding-block-start": 0,
         "padding-block-end": 0
@@ -134,7 +134,8 @@
         "gift_grid_item_hKP3Dg": {
           "type": "_gift-grid-item",
           "settings": {
-            "product": "",
+            "image": "shopify://shop_images/black-bag-over-the-shoulder_925x_4cae5708-5e9e-4e7e-96ec-9649f0c20cd8.jpg",
+            "product": "black-leather-bag",
             "x-position": 50,
             "y-position": 50
           },
@@ -230,6 +231,9 @@
         "background_color": "",
         "marker_background": "#ffffff",
         "marker_icon": "#000000",
+        "button_label": "ADD TO CART",
+        "bonus_product": "",
+        "bonus_trigger": "Black, Medium",
         "padding-block-start": 60,
         "padding-block-end": 60
       }
