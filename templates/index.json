@@ -133,6 +133,7 @@
         "gift_grid_item_NqH6NU": {
           "type": "_gift-grid-item",
           "settings": {
+            "image": "shopify://shop_images/black-bag-over-the-shoulder_925x_4cae5708-5e9e-4e7e-96ec-9649f0c20cd8.jpg",
             "product": "black-leather-bag",
             "x-position": 50,
             "y-position": 50
