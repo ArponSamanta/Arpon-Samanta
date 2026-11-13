@@ -15,21 +15,26 @@ import { Component } from '@theme/component';
 export class GiftGridItemComponent extends Component {
   requiredRefs = ['trigger'];
 
-  /**
+    /**
    * Opens the quick-add modal for this tile's product.
    * @param {Event} event
    */
   openQuickAdd = (event) => {
     event.preventDefault();
 
-    const quickAdd = this.querySelector('quick-add-component');
+    const quickAdd = /** @type {import('./quick-add').QuickAddComponent | null} */ (
+      this.querySelector('quick-add-component')
+    );
 
-    if (!quickAdd || typeof quickAdd.handleClick !== 'function') return;
+    if (!quickAdd) return;
 
-    quickAdd.handleClick(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    // quick-add only finds its product URL inside a product card or a hotspot.
+    // Give this instance the tile's URL so it fetches the right product.
+    Object.defineProperty(quickAdd, 'productPageUrl', {
+      configurable: true,
+      get: () => this.dataset.productUrl ?? '',
+    });
+
+    quickAdd.handleClick(new MouseEvent('click', { cancelable: true }));
   };
-}
-
-if (!customElements.get('gift-grid-item-component')) {
-  customElements.define('gift-grid-item-component', GiftGridItemComponent);
 }
