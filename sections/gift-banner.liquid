@@ -1,6 +1,40 @@
 <div class="section section--full-width gift-banner">
   {%- comment -%} Top bar: static blocks, so position is fixed but content is editable {%- endcomment -%}
+  <div class="gift-banner__bar">
+    <div class="gift-banner__bar-start">
+      {% content_for 'block', type: 'text', id: 'brand' %}
+    </div>
+    <div class="gift-banner__bar-end">
+      {% content_for 'block', type: 'text', id: 'tagline' %}
+      {% content_for 'block', type: 'button', id: 'bar-cta' %}
+    </div>
+  </div>
+
+  {% content_for 'blocks' %}
 </div>
+
+{% stylesheet %}
+  .gift-banner {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .gift-banner__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--gap-md);
+    padding: var(--padding-sm) var(--padding-md);
+  }
+
+  .gift-banner__bar-end {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--gap-md);
+  }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -14,7 +48,37 @@
   "settings": [],
   "presets": [
     {
-      "name": "Gift banner"
+      "name": "Gift banner",
+      "blocks": {
+        "brand": {
+          "type": "text",
+          "name": "Brand name",
+          "static": true,
+          "settings": {
+            "text": "<p>TISSO VISON</p>",
+            "type_preset": "h6",
+            "case": "uppercase"
+          }
+        },
+        "tagline": {
+          "type": "text",
+          "name": "Tagline",
+          "static": true,
+          "settings": {
+            "text": "<p>Find the ideal gift for your loved ones.</p>",
+            "type_preset": "paragraph"
+          }
+        },
+        "bar-cta": {
+          "type": "button",
+          "name": "Top bar button",
+          "static": true,
+          "settings": {
+            "label": "CHOOSE GIFT",
+            "style_class": "button"
+          }
+        }
+      }
     }
   ]
 }
