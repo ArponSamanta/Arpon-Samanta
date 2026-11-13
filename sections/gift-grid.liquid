@@ -1,0 +1,209 @@
+<script
+  src="{{ 'gift-grid.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>
+
+{%- comment -%}
+  The quick-add modal is styled by these snippets. Rendering them here is what
+  makes the popup look right — the same list product-hotspots.liquid renders.
+{%- endcomment -%}
+{% render 'quick-add-styles' %}
+{% render 'quick-add-modal-styles' %}
+{% render 'swatch-styles' %}
+{% render 'quantity-selector-styles' %}
+{% render 'variant-picker-styles' %}
+{% render 'buy-buttons-styles' %}
+{% render 'product-badges-styles' %}
+
+{% liquid
+  if section.settings.background_color != blank
+    render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
+  endif
+%}
+
+<div
+  class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
+></div>
+
+<div
+  class="
+    section
+    section--{{ section.settings.section_width }}
+    gift-grid
+    {% if section.settings.background_color != blank %}color-custom-{{ section.id }}{% endif %}
+    spacing-style
+    gap-style
+  "
+  data-testid="gift-grid"
+  style="
+    {% render 'spacing-style', settings: section.settings %}
+    {% render 'gap-style', value: section.settings.heading_gap %}
+    --gift-grid-ratio: {{ section.settings.image_ratio }};
+    --gift-grid-gap: {{ section.settings.grid_gap }}px;
+    --gift-grid-marker-size: 28px;
+  "
+>
+  <div class="gift-grid__header">
+    {% content_for 'block', type: 'text', id: 'heading' %}
+  </div>
+
+  <div class="gift-grid__list">
+    {% content_for 'blocks' %}
+  </div>
+</div>
+
+{% stylesheet %}
+  .gift-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+  }
+
+  .gift-grid__list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--gift-grid-gap, 16px);
+  }
+
+  /* 2 across x 3 down on mobile — six blocks fill both layouts exactly */
+  @media screen and (max-width: 749px) {
+    .gift-grid__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Gift grid",
+  "disabled_on": {
+    "groups": ["header", "footer"]
+  },
+  "max_blocks": 6,
+  "blocks": [
+    { "type": "_gift-grid-item" }
+  ],
+  "settings": [
+    { "type": "header", "content": "t:content.section_layout" },
+    {
+      "type": "select",
+      "id": "section_width",
+      "label": "t:settings.width",
+      "options": [
+        { "value": "page-width", "label": "t:options.page" },
+        { "value": "full-width", "label": "t:options.full" }
+      ],
+      "default": "page-width"
+    },
+    {
+      "type": "select",
+      "id": "image_ratio",
+      "label": "Image shape",
+      "options": [
+        { "value": "1 / 1", "label": "Square" },
+        { "value": "3 / 4", "label": "Portrait" },
+        { "value": "4 / 3", "label": "Landscape" }
+      ],
+      "default": "1 / 1"
+    },
+    {
+      "type": "range",
+      "id": "grid_gap",
+      "label": "Space between images",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "heading_gap",
+      "label": "t:settings.vertical_gap",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 40
+    },
+
+    { "type": "header", "content": "t:content.colors" },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "t:settings.background_color",
+      "placeholder": "t:settings.default"
+    },
+    {
+      "type": "color",
+      "id": "marker_background",
+      "label": "Marker background",
+      "alpha": true,
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "marker_icon",
+      "label": "Marker icon",
+      "alpha": true,
+      "default": "#000000"
+    },
+
+    { "type": "header", "content": "t:content.padding" },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 60
+    }
+  ],
+  "presets": [
+    {
+      "name": "Gift grid",
+      "settings": {
+        "section_width": "page-width",
+        "image_ratio": "1 / 1",
+        "grid_gap": 16,
+        "heading_gap": 40
+      },
+      "blocks": {
+        "heading": {
+          "type": "text",
+          "name": "Heading",
+          "static": true,
+          "settings": {
+            "text": "<p>Tisso vison in the wild</p>",
+            "type_preset": "custom",
+            "font": "var(--font-accent--family)",
+            "font_size": "2.5rem",
+            "width": "100%",
+            "alignment": "left"
+          }
+        },
+        "item-1": { "type": "_gift-grid-item" },
+        "item-2": { "type": "_gift-grid-item" },
+        "item-3": { "type": "_gift-grid-item" },
+        "item-4": { "type": "_gift-grid-item" },
+        "item-5": { "type": "_gift-grid-item" },
+        "item-6": { "type": "_gift-grid-item" }
+      },
+      "block_order": ["item-1", "item-2", "item-3", "item-4", "item-5", "item-6"]
+    }
+  ]
+}
+{% endschema %}
