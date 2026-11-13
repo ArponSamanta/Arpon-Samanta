@@ -2,6 +2,7 @@
   assign strip_id = section.id | append: '-strip'
   assign desktop_image = section.settings.image
   assign mobile_image = section.settings.image_mobile
+  assign media_layout = section.settings.media_layout
 
   if section.settings.background_color != blank
     render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
@@ -21,14 +22,18 @@
     section
     section--full-width
     gift-banner
+    gift-banner--{{ media_layout }}
     {% if section.settings.background_color != blank %}color-custom-{{ section.id }}{% endif %}
     spacing-style
   "
   data-testid="gift-banner"
   style="
     {% render 'spacing-style', settings: section.settings %}
-    {% if desktop_image != blank %}
+    {% if media_layout == 'cover' and desktop_image != blank %}
       --gift-banner-ratio: {{ desktop_image.aspect_ratio }};
+    {% endif %}
+    {% if mobile_image != blank %}
+      --gift-banner-mobile-ratio: {{ mobile_image.aspect_ratio }};
     {% endif %}
     --gift-cta-hover-background: {{ section.settings.button_hover_background }};
     --gift-cta-hover-text: {{ section.settings.button_hover_text }};
@@ -36,12 +41,14 @@
 >
   <div class="gift-banner__stage">
     {%- comment -%}
-      One <picture>, so only the image for the current breakpoint is downloaded.
-      Desktop: fills the stage behind the content. Mobile: sits below the text.
+      Two-row layout (the design): the same illustration is drawn twice. The upper
+      copy is bottom-aligned to the middle of the stage, the lower copy starts at the
+      middle and is pushed right, which leaves the lower-left corner clear for the text.
+      Both copies share one URL, so the file is downloaded once.
     {%- endcomment -%}
     <div class="gift-banner__media">
       {% if desktop_image != blank %}
-        <picture>
+        <picture class="gift-banner__art gift-banner__art--upper">
           {% if mobile_image != blank %}
             <source
               media="(max-width: 749px)"
@@ -68,20 +75,36 @@
               alt: desktop_image.alt
           }}
         </picture>
+
+        {% if media_layout == 'rows' %}
+          {{
+            desktop_image
+            | image_url: width: 3840
+            | image_tag:
+              class: 'gift-banner__art gift-banner__art--lower',
+              widths: '750, 1100, 1440, 1920, 2880, 3840',
+              sizes: '100vw',
+              loading: 'lazy',
+              alt: ''
+          }}
+        {% endif %}
       {% else %}
-        {{ 'hero-apparel-1' | placeholder_svg_tag: 'gift-banner__image' }}
+        {{ 'hero-apparel-1' | placeholder_svg_tag: 'gift-banner__art gift-banner__art--placeholder' }}
       {% endif %}
     </div>
 
-    <div
-      class="gift-banner__content gap-style"
-      style="{% render 'gap-style', value: section.settings.content_gap %}"
-    >
-      {% content_for 'blocks' %}
-    </div>
+    {%- comment -%} Desktop: one white panel, bottom-left. Mobile: the panel dissolves. {%- endcomment -%}
+    <div class="gift-banner__panel">
+      <div
+        class="gift-banner__content gap-style"
+        style="{% render 'gap-style', value: section.settings.content_gap %}"
+      >
+        {% content_for 'blocks' %}
+      </div>
 
-    <div class="gift-banner__cta gift-cta">
-      {% content_for 'block', type: 'button', id: 'cta' %}
+      <div class="gift-banner__cta gift-cta">
+        {% content_for 'block', type: 'button', id: 'cta' %}
+      </div>
     </div>
   </div>
 
@@ -95,17 +118,17 @@
     /* 67px and 52px at the 1440 frame, scaling down on smaller screens */
     --gift-banner-inset: clamp(1.25rem, 4.65vw, 4.1875rem);
     --gift-banner-bottom: clamp(1.5rem, 3.6vw, 3.25rem);
+    /* How far right the lower copy of the illustration starts */
+    --gift-banner-lower-offset: 38%;
     --gift-cta-height: 50px;
   }
 
-  /* Desktop: illustration fills the stage, content anchored bottom-left */
   .gift-banner__stage {
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 1fr auto auto;
+    grid-template-rows: 1fr auto;
     aspect-ratio: var(--gift-banner-ratio, 1440 / 780);
-    padding: 0 var(--gift-banner-inset) var(--gift-banner-bottom);
     overflow: hidden;
   }
 
@@ -114,36 +137,65 @@
     inset: 0;
   }
 
-  .gift-banner__media picture {
+  .gift-banner__art {
+    position: absolute;
+    left: 0;
     display: block;
     width: 100%;
-    height: 100%;
+    height: auto;
   }
 
   .gift-banner__image {
     display: block;
     width: 100%;
+    height: auto;
+  }
+
+  /* Two rows: upper copy ends at the middle, lower copy starts there */
+  .gift-banner--rows .gift-banner__art--upper {
+    bottom: 50%;
+  }
+
+  .gift-banner--rows .gift-banner__art--lower {
+    top: 50%;
+    left: var(--gift-banner-lower-offset);
+  }
+
+  /* Cover: a single image fills the stage */
+  .gift-banner--cover .gift-banner__art--upper,
+  .gift-banner__art--placeholder {
+    inset: 0;
+    height: 100%;
+  }
+
+  .gift-banner--cover .gift-banner__image {
     height: 100%;
     object-fit: cover;
     object-position: center;
   }
 
-  .gift-banner__content {
+  /* Text and button share one panel on the page background, bottom-left */
+  .gift-banner__panel {
     grid-row: 2;
+    justify-self: start;
     position: relative;
     z-index: var(--layer-flat);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    max-width: min(100%, 36rem);
+    padding: var(--padding-xl) var(--padding-xl) var(--gift-banner-bottom) var(--gift-banner-inset);
+    background-color: var(--color-background);
+  }
+
+  .gift-banner__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     gap: var(--gap);
-    max-width: 32rem;
   }
 
   .gift-banner__cta {
-    grid-row: 3;
-    position: relative;
-    z-index: var(--layer-flat);
-    justify-self: start;
     margin-block-start: var(--padding-2xl);
   }
 
@@ -158,7 +210,10 @@
     .gift-banner__stage {
       grid-template-rows: auto auto;
       aspect-ratio: auto;
-      padding: 0;
+    }
+
+    .gift-banner__panel {
+      display: contents;
     }
 
     .gift-banner__content {
@@ -166,7 +221,6 @@
 
       grid-row: 1;
       align-items: center;
-      max-width: none;
       padding: var(--padding-2xl) var(--padding-md) var(--padding-lg);
     }
 
@@ -175,11 +229,23 @@
       inset: auto;
       grid-row: 2;
       grid-column: 1;
+      aspect-ratio: var(--gift-banner-mobile-ratio, 3 / 2);
+      overflow: hidden;
     }
 
-    .gift-banner__media picture,
-    .gift-banner__image {
-      height: auto;
+    .gift-banner__art--lower {
+      display: none;
+    }
+
+    .gift-banner .gift-banner__art--upper {
+      inset: 0;
+      height: 100%;
+    }
+
+    .gift-banner .gift-banner__image {
+      height: 100%;
+      object-fit: cover;
+      object-position: 25% 50%;
     }
 
     .gift-banner__cta {
@@ -187,6 +253,8 @@
       grid-column: 1;
       align-self: end;
       justify-self: center;
+      position: relative;
+      z-index: var(--layer-flat);
       margin-block: 0 var(--padding-2xl);
     }
   }
@@ -216,14 +284,30 @@
     {
       "type": "image_picker",
       "id": "image",
-      "label": "t:settings.image",
-      "info": "Desktop illustration. The banner takes its shape from this image."
+      "label": "t:settings.image"
+    },
+    {
+      "type": "select",
+      "id": "media_layout",
+      "label": "Image layout",
+      "options": [
+        {
+          "value": "rows",
+          "label": "Two rows, text corner clear"
+        },
+        {
+          "value": "cover",
+          "label": "Fill the banner"
+        }
+      ],
+      "default": "rows",
+      "info": "Two rows repeats a wide illustration and keeps the lower-left corner free for the text."
     },
     {
       "type": "image_picker",
       "id": "image_mobile",
       "label": "Mobile image",
-      "info": "Optional. Shown under the text on small screens."
+      "info": "Optional. Replaces the image on small screens."
     },
     {
       "type": "range",
@@ -292,6 +376,7 @@
     {
       "name": "Gift banner",
       "settings": {
+        "media_layout": "rows",
         "content_gap": 24
       },
       "blocks": {
@@ -305,9 +390,8 @@
         "body": {
           "type": "text",
           "settings": {
-            "text": "<p>Discover Joy: Your Ultimate Holiday Gift Destination.</p>",
-            "type_preset": "paragraph",
-            "max_width": "narrow"
+            "text": "<p>Discover Joy: Your Ultimate Holiday Gift Destination. Explore our curated selection and find the perfect gifts to delight your loved ones this holiday season.</p>",
+            "type_preset": "paragraph"
           }
         },
         "cta": {
