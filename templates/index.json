@@ -116,6 +116,7 @@
       ],
       "name": "Gift banner",
       "settings": {
+        "image": "shopify://shop_images/Frame.svg",
         "content_gap": 24,
         "background_color": "#FFFFFF",
         "strip_background": "#F5F5F5",
