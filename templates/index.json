@@ -68,7 +68,7 @@
           "static": true,
           "settings": {
             "label": "SHOP NOW",
-            "link": "",
+            "link": "shopify://collections/all",
             "open_in_new_tab": false,
             "style_class": "button",
             "custom_button_background": "{{ settings.color_palette.foreground }}",
@@ -127,9 +127,116 @@
         "padding-block-start": 0,
         "padding-block-end": 0
       }
+    },
+    "gift_grid_paVN4B": {
+      "type": "gift-grid",
+      "blocks": {
+        "gift_grid_item_hKP3Dg": {
+          "type": "_gift-grid-item",
+          "settings": {
+            "product": "",
+            "x-position": 50,
+            "y-position": 50
+          },
+          "blocks": {}
+        },
+        "gift_grid_item_GC6ay4": {
+          "type": "_gift-grid-item",
+          "settings": {
+            "product": "",
+            "x-position": 50,
+            "y-position": 50
+          },
+          "blocks": {}
+        },
+        "gift_grid_item_7mVDGR": {
+          "type": "_gift-grid-item",
+          "settings": {
+            "product": "",
+            "x-position": 50,
+            "y-position": 50
+          },
+          "blocks": {}
+        },
+        "gift_grid_item_kHL3W7": {
+          "type": "_gift-grid-item",
+          "settings": {
+            "product": "",
+            "x-position": 50,
+            "y-position": 50
+          },
+          "blocks": {}
+        },
+        "gift_grid_item_wQwaNp": {
+          "type": "_gift-grid-item",
+          "settings": {
+            "product": "",
+            "x-position": 50,
+            "y-position": 50
+          },
+          "blocks": {}
+        },
+        "gift_grid_item_AA33ck": {
+          "type": "_gift-grid-item",
+          "settings": {
+            "product": "",
+            "x-position": 50,
+            "y-position": 50
+          },
+          "blocks": {}
+        },
+        "heading": {
+          "type": "text",
+          "name": "Heading",
+          "static": true,
+          "settings": {
+            "text": "<p>Tisso vison in the wild</p>",
+            "width": "100%",
+            "max_width": "normal",
+            "alignment": "left",
+            "type_preset": "custom",
+            "font": "var(--font-accent--family)",
+            "font_size": "2.5rem",
+            "line_height": "normal",
+            "letter_spacing": "normal",
+            "case": "none",
+            "wrap": "pretty",
+            "text_color": "",
+            "background": false,
+            "background_color": "#00000026",
+            "corner_radius": 0,
+            "padding-block-start": 0,
+            "padding-block-end": 0,
+            "padding-inline-start": 0,
+            "padding-inline-end": 0
+          },
+          "blocks": {}
+        }
+      },
+      "block_order": [
+        "gift_grid_item_hKP3Dg",
+        "gift_grid_item_GC6ay4",
+        "gift_grid_item_7mVDGR",
+        "gift_grid_item_kHL3W7",
+        "gift_grid_item_wQwaNp",
+        "gift_grid_item_AA33ck"
+      ],
+      "name": "Gift grid",
+      "settings": {
+        "section_width": "page-width",
+        "image_ratio": "1 / 1",
+        "grid_gap": 16,
+        "heading_gap": 40,
+        "background_color": "",
+        "marker_background": "#ffffff",
+        "marker_icon": "#000000",
+        "padding-block-start": 60,
+        "padding-block-end": 60
+      }
     }
   },
   "order": [
-    "gift_banner_injJdW"
+    "gift_banner_injJdW",
+    "gift_grid_paVN4B"
   ]
 }
