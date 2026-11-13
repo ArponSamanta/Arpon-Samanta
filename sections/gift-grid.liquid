@@ -4,19 +4,9 @@
   fetchpriority="low"
 ></script>
 
-{%- comment -%}
-  The quick-add modal is styled by these snippets. Rendering them here is what
-  makes the popup look right — the same list product-hotspots.liquid renders.
-{%- endcomment -%}
-{% render 'quick-add-styles' %}
-{% render 'quick-add-modal-styles' %}
-{% render 'swatch-styles' %}
-{% render 'quantity-selector-styles' %}
-{% render 'variant-picker-styles' %}
-{% render 'buy-buttons-styles' %}
-{% render 'product-badges-styles' %}
-
 {% liquid
+  assign bonus_variant = section.settings.bonus_product.selected_or_first_available_variant
+
   if section.settings.background_color != blank
     render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
   endif
@@ -26,38 +16,87 @@
   class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
 ></div>
 
-<div
+<gift-grid-component
   class="
     section
     section--{{ section.settings.section_width }}
     gift-grid
     {% if section.settings.background_color != blank %}color-custom-{{ section.id }}{% endif %}
     spacing-style
-    gap-style
   "
   data-testid="gift-grid"
+  {% if bonus_variant.available %}
+    data-bonus-variant-id="{{ bonus_variant.id }}"
+    data-bonus-trigger="{{ section.settings.bonus_trigger | escape }}"
+  {% endif %}
   style="
     {% render 'spacing-style', settings: section.settings %}
-    {% render 'gap-style', value: section.settings.heading_gap %}
     --gift-grid-ratio: {{ section.settings.image_ratio }};
     --gift-grid-gap: {{ section.settings.grid_gap }}px;
-    --gift-grid-marker-size: 28px;
+    --gift-grid-heading-gap: {{ section.settings.heading_gap }}px;
+    --gift-grid-marker-bg: {{ section.settings.marker_background }};
+    --gift-grid-marker-fg: {{ section.settings.marker_icon }};
   "
 >
-  <div class="gift-grid__header">
-    {% content_for 'block', type: 'text', id: 'heading' %}
+  <div class="gift-grid__inner">
+    <div class="gift-grid__header">
+      {% content_for 'block', type: 'text', id: 'heading' %}
+    </div>
+
+    <div class="gift-grid__list">
+      {% content_for 'blocks' %}
+    </div>
   </div>
 
-  <div class="gift-grid__list">
-    {% content_for 'blocks' %}
-  </div>
-</div>
+  {%- comment -%} One popup for the whole grid, filled from the tile's data when it opens {%- endcomment -%}
+  <dialog class="gift-popup" ref="dialog" aria-labelledby="GiftPopupTitle-{{ section.id }}">
+    <form class="gift-popup__card" ref="form" novalidate>
+      <button
+        class="gift-popup__close"
+        type="button"
+        on:click="/closePopup"
+        aria-label="{{ 'accessibility.close_dialog' | t }}"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
+          <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+      </button>
+
+      <div class="gift-popup__product">
+        <img class="gift-popup__image" ref="image" src="data:," alt="" width="300" height="348">
+        <div class="gift-popup__info">
+          <h2 class="gift-popup__title" id="GiftPopupTitle-{{ section.id }}" ref="title"></h2>
+          <p class="gift-popup__price" ref="price"></p>
+          <p class="gift-popup__description" ref="description"></p>
+        </div>
+      </div>
+
+      <div class="gift-popup__options" ref="options"></div>
+
+      <p class="gift-popup__message" ref="message" role="alert"></p>
+
+      <button
+        class="gift-popup__add"
+        type="submit"
+        ref="addButton"
+        data-sold-out-label="{{ 'content.product_badge_sold_out' | t | escape }}"
+      >
+        <span ref="addLabel">{{ section.settings.button_label | escape }}</span>
+        <svg width="34" height="10" viewBox="0 0 34 10" fill="none" aria-hidden="true" focusable="false">
+          <path d="M0 5h33M28.5 1l4 4-4 4" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+      </button>
+    </form>
+  </dialog>
+</gift-grid-component>
 
 {% stylesheet %}
-  .gift-grid {
+  /* ---------- Grid ---------- */
+
+  .gift-grid__inner {
     display: flex;
     flex-direction: column;
-    gap: var(--gap);
+    gap: var(--gift-grid-heading-gap, 40px);
   }
 
   .gift-grid__list {
@@ -66,48 +105,264 @@
     gap: var(--gift-grid-gap, 16px);
   }
 
-  /* 2 across x 3 down on mobile — six blocks fill both layouts exactly */
+  /* 2 across x 3 down: six tiles fill both layouts exactly */
   @media screen and (max-width: 749px) {
     .gift-grid__list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: min(var(--gift-grid-gap, 16px), 8px);
     }
   }
 
-  /* ---- Quick-add modal, tuned to the Figma popup ---- */
+  /* ---------- Popup: frames 1000009756 to 1000009760 ---------- */
 
-.quick-add-modal {
-  /* Figma: measure the dialog width and corner radius in Inspect */
-  --maximum-width-dialog: 900px;
-}
+  html:has(.gift-popup[open]) {
+    overflow: hidden;
+  }
 
-.quick-add-modal__content {
-  /* Image left, details right, as in the frame */
-  align-items: stretch;
-}
+  .gift-popup {
+    width: min(390px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: #fff;
+    color: #000;
+    overflow-y: auto;
+  }
 
-.quick-add-modal__content .product-details {
-  gap: var(--gap-md);
-  padding: var(--padding-lg);
-}
+  .gift-popup::backdrop {
+    background: rgb(0 0 0 / 0.45);
+  }
 
-.quick-add-modal__content .view-product-title {
-  font-size: var(--font-size--2xl);
-}
+  .gift-popup__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    font-family: var(--font-body--family);
+  }
 
-/* Full-width add to cart, per the frame */
-.quick-add-modal__content .product-details .buy-buttons-block {
-  width: 100%;
-}
+  .gift-popup__close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
 
-.quick-add-modal__content product-form-component .button {
-  width: 100%;
-  justify-content: center;
-}
+  .gift-popup__product {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 10px;
+    padding-inline-end: 24px;
+  }
 
-.quick-add-modal__close {
-  /* Figma: square close button, not the default round one */
-  border-radius: 0;
-}
+  .gift-popup__image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 150 / 174;
+    object-fit: cover;
+    background: rgb(0 0 0 / 0.05);
+  }
+
+  .gift-popup__title {
+    margin: 4px 0 0;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 300;
+    line-height: 1.25;
+  }
+
+  .gift-popup__price {
+    margin: 14px 0 0;
+    font-size: 16px;
+  }
+
+  .gift-popup__description {
+    margin: 10px 0 0;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.2;
+  }
+
+  .gift-popup__options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .gift-popup__label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 300;
+  }
+
+  /* Colour chips: components 208 to 211 */
+  .gift-popup__chips {
+    display: grid;
+    grid-template-columns: repeat(var(--chip-count, 2), minmax(0, 1fr));
+    border: 1px solid #000;
+  }
+
+  .gift-popup__chip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 0 12px 0 0;
+    border: none;
+    background: #fff;
+    color: #000;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 300;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .gift-popup__chip + .gift-popup__chip {
+    border-inline-start: 1px solid #000;
+  }
+
+  .gift-popup__chip::before {
+    content: '';
+    align-self: stretch;
+    width: 6px;
+    background: var(--chip-color, #ccc);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+  }
+
+  .gift-popup__chip[aria-pressed='true'] {
+    background: #000;
+    color: #fff;
+  }
+
+  .gift-popup__chip:disabled {
+    color: rgb(0 0 0 / 0.35);
+    text-decoration: line-through;
+    cursor: not-allowed;
+  }
+
+  /* Size dropdown: components 212 and 213 */
+  .gift-popup__select {
+    position: relative;
+  }
+
+  .gift-popup__select-button {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 56px;
+    width: 100%;
+    min-height: 44px;
+    padding: 0;
+    border: 1px solid #000;
+    background: #fff;
+    color: #000;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 300;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .gift-popup__select-value {
+    display: flex;
+    align-items: center;
+    padding-inline: 14px;
+  }
+
+  .gift-popup__select-button[data-chosen] .gift-popup__select-value {
+    justify-content: center;
+  }
+
+  .gift-popup__select-chevron {
+    display: grid;
+    place-items: center;
+    border-inline-start: 1px solid #000;
+  }
+
+  .gift-popup__select-button[aria-expanded='true'] .gift-popup__select-chevron svg {
+    rotate: 180deg;
+  }
+
+  .gift-popup__listbox {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    max-height: 220px;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+    border: 1px solid #000;
+    border-top: none;
+    background: #fff;
+  }
+
+  .gift-popup__option {
+    padding: 8px 14px;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .gift-popup__option:is(:hover, [data-active]) {
+    background: rgb(0 0 0 / 0.07);
+  }
+
+  .gift-popup__option[aria-selected='true'] {
+    background: #000;
+    color: #fff;
+  }
+
+  .gift-popup__option[aria-disabled='true'] {
+    color: rgb(0 0 0 / 0.35);
+    text-decoration: line-through;
+    cursor: not-allowed;
+  }
+
+  :is(.gift-popup__chip, .gift-popup__select-button, .gift-popup__close, .gift-popup__add):focus-visible {
+    outline: 2px solid #000;
+    outline-offset: 2px;
+  }
+
+  .gift-popup__message {
+    min-height: 1.2em;
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: #b3261e;
+  }
+
+  .gift-popup__add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    min-height: 48px;
+    margin-top: 22px;
+    border: none;
+    background: #000;
+    color: #fff;
+    font: inherit;
+    font-size: 16px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .gift-popup__add[aria-busy='true'] {
+    opacity: 0.6;
+    cursor: progress;
+  }
 {% endstylesheet %}
 
 {% schema %}
@@ -118,17 +373,28 @@
   },
   "max_blocks": 6,
   "blocks": [
-    { "type": "_gift-grid-item" }
+    {
+      "type": "_gift-grid-item"
+    }
   ],
   "settings": [
-    { "type": "header", "content": "t:content.section_layout" },
+    {
+      "type": "header",
+      "content": "t:content.section_layout"
+    },
     {
       "type": "select",
       "id": "section_width",
       "label": "t:settings.width",
       "options": [
-        { "value": "page-width", "label": "t:options.page" },
-        { "value": "full-width", "label": "t:options.full" }
+        {
+          "value": "page-width",
+          "label": "t:options.page"
+        },
+        {
+          "value": "full-width",
+          "label": "t:options.full"
+        }
       ],
       "default": "page-width"
     },
@@ -137,9 +403,18 @@
       "id": "image_ratio",
       "label": "Image shape",
       "options": [
-        { "value": "1 / 1", "label": "Square" },
-        { "value": "3 / 4", "label": "Portrait" },
-        { "value": "4 / 3", "label": "Landscape" }
+        {
+          "value": "1 / 1",
+          "label": "Square"
+        },
+        {
+          "value": "3 / 4",
+          "label": "Portrait"
+        },
+        {
+          "value": "4 / 3",
+          "label": "Landscape"
+        }
       ],
       "default": "1 / 1"
     },
@@ -163,30 +438,55 @@
       "unit": "px",
       "default": 40
     },
-
-    { "type": "header", "content": "t:content.colors" },
+    {
+      "type": "header",
+      "content": "t:content.colors"
+    },
     {
       "type": "color",
       "id": "background_color",
       "label": "t:settings.background_color",
-      "placeholder": "t:settings.default"
+      "default": "#FFFFFF"
     },
     {
       "type": "color",
       "id": "marker_background",
       "label": "Marker background",
-      "alpha": true,
-      "default": "#ffffff"
+      "default": "#FFFFFF"
     },
     {
       "type": "color",
       "id": "marker_icon",
       "label": "Marker icon",
-      "alpha": true,
       "default": "#000000"
     },
-
-    { "type": "header", "content": "t:content.padding" },
+    {
+      "type": "header",
+      "content": "Popup"
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Button label",
+      "default": "ADD TO CART"
+    },
+    {
+      "type": "product",
+      "id": "bonus_product",
+      "label": "Also add this product",
+      "info": "Added with the chosen product when the rule below matches. Leave empty to turn off."
+    },
+    {
+      "type": "text",
+      "id": "bonus_trigger",
+      "label": "When the chosen variant includes",
+      "default": "Black, Medium",
+      "info": "Option values separated by commas. They must match your product's values, for example M rather than Medium."
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
     {
       "type": "range",
       "id": "padding-block-start",
@@ -231,12 +531,24 @@
             "alignment": "left"
           }
         },
-        "item-1": { "type": "_gift-grid-item" },
-        "item-2": { "type": "_gift-grid-item" },
-        "item-3": { "type": "_gift-grid-item" },
-        "item-4": { "type": "_gift-grid-item" },
-        "item-5": { "type": "_gift-grid-item" },
-        "item-6": { "type": "_gift-grid-item" }
+        "item-1": {
+          "type": "_gift-grid-item"
+        },
+        "item-2": {
+          "type": "_gift-grid-item"
+        },
+        "item-3": {
+          "type": "_gift-grid-item"
+        },
+        "item-4": {
+          "type": "_gift-grid-item"
+        },
+        "item-5": {
+          "type": "_gift-grid-item"
+        },
+        "item-6": {
+          "type": "_gift-grid-item"
+        }
       },
       "block_order": ["item-1", "item-2", "item-3", "item-4", "item-5", "item-6"]
     }
