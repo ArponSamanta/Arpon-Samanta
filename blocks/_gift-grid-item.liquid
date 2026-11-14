@@ -1,0 +1,179 @@
+{% liquid
+  assign item_product = block.settings.product
+  assign marker_label = 'accessibility.show_product_details' | t: product_name: item_product.title
+%}
+
+<div
+  class="gift-grid__item"
+  data-id="{{ block.id }}"
+  {{ block.shopify_attributes }}
+>
+  {% if block.settings.image != blank %}
+    {{
+      block.settings.image
+      | image_url: width: 1600
+      | image_tag:
+        class: 'gift-grid__image',
+        widths: '300, 450, 600, 900, 1200, 1600',
+        sizes: '(min-width: 750px) 33vw, 50vw',
+        loading: 'lazy',
+        alt: block.settings.image.alt
+    }}
+  {% else %}
+    {{ 'product-apparel-1' | placeholder_svg_tag: 'gift-grid__image gift-grid__image--placeholder' }}
+  {% endif %}
+
+  {% if item_product != blank %}
+    <button
+      class="gift-grid__marker"
+      type="button"
+      on:click="/openPopup"
+      data-block-id="{{ block.id }}"
+      aria-haspopup="dialog"
+      aria-label="{{ marker_label }}"
+      style="left: {{ block.settings.x-position }}%; top: {{ block.settings.y-position }}%;"
+    >
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" focusable="false">
+        <path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+    </button>
+
+    {%- comment -%}
+      Everything the popup needs, printed once per tile and read when the popup
+      opens, so nothing is fetched until the shopper adds to cart.
+    {%- endcomment -%}
+    <script type="application/json" data-gift-product="{{ block.id }}">
+      {
+        "title": {{ item_product.title | json }},
+        "url": {{ item_product.url | json }},
+        "description": {{ item_product.description | strip_html | strip_newlines | truncatewords: 40 | json }},
+        "image": {% if item_product.featured_image %}{{ item_product.featured_image | image_url: width: 600 | json }}{% else %}null{% endif %},
+        "imageAlt": {{ item_product.featured_image.alt | default: item_product.title | json }},
+        "options": [
+          {%- for option in item_product.options_with_values -%}
+            {
+              "name": {{ option.name | json }},
+              "values": [
+                {%- for value in option.values -%}
+                  {
+                    "name": {{ value.name | json }},
+                    "swatch": {% if value.swatch.color %}"{{ value.swatch.color }}"{% else %}null{% endif %}
+                  }{% unless forloop.last %},{% endunless %}
+                {%- endfor -%}
+              ]
+            }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        ],
+        "variants": [
+          {%- for variant in item_product.variants -%}
+            {
+              "id": {{ variant.id }},
+              "available": {{ variant.available | json }},
+              "options": {{ variant.options | json }},
+              "price": {{ variant.price | money | json }},
+              "image": {% if variant.featured_image %}{{ variant.featured_image | image_url: width: 600 | json }}{% else %}null{% endif %}
+            }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        ]
+      }
+    </script>
+  {% endif %}
+</div>
+
+{% stylesheet %}
+  .gift-grid__item {
+    position: relative;
+    aspect-ratio: var(--gift-grid-ratio, 1 / 1);
+    overflow: hidden;
+    background: rgb(var(--color-foreground-rgb) / var(--opacity-10));
+  }
+
+  .gift-grid__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .gift-grid__image--placeholder {
+    object-fit: contain;
+  }
+
+  /* White circle with a black plus, placed on the garment */
+  .gift-grid__marker {
+    position: absolute;
+    translate: -50% -50%;
+    z-index: var(--layer-flat);
+    display: grid;
+    place-items: center;
+    width: var(--gift-grid-marker-size, 28px);
+    height: var(--gift-grid-marker-size, 28px);
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--gift-grid-marker-bg, #fff);
+    color: var(--gift-grid-marker-fg, #000);
+    box-shadow: 0 1px 6px rgb(0 0 0 / 0.18);
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .gift-grid__marker {
+      transition: scale var(--animation-speed) var(--ease-out-cubic);
+    }
+
+    .gift-grid__marker:is(:hover, :focus-visible) {
+      scale: 1.15;
+    }
+  }
+
+  .gift-grid__marker:focus-visible {
+    outline: var(--focus-outline-width) solid #fff;
+    outline-offset: var(--focus-outline-offset);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Grid image",
+  "tag": null,
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "t:settings.image"
+    },
+    {
+      "type": "product",
+      "id": "product",
+      "label": "t:settings.product",
+      "info": "Opens in the popup. Without a product, the tile has no marker."
+    },
+    {
+      "type": "range",
+      "id": "x-position",
+      "label": "t:settings.x_position",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 50
+    },
+    {
+      "type": "range",
+      "id": "y-position",
+      "label": "t:settings.y_position",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 50
+    }
+  ],
+  "presets": [
+    {
+      "name": "Grid image"
+    }
+  ]
+}
+{% endschema %}

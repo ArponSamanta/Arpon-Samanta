@@ -1,0 +1,266 @@
+<script
+  src="{{ 'gift-header.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>
+
+{% liquid
+  if section.settings.background_color != blank
+    render 'contrast-override', background_color: section.settings.background_color, section_id: section.id, preset: 'ui'
+  endif
+%}
+
+<gift-header-component
+  class="gift-header{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
+  data-testid="gift-header"
+  style="
+    --gift-cta-hover-background: {{ section.settings.button_hover_background }};
+    --gift-cta-hover-text: {{ section.settings.button_hover_text }};
+  "
+>
+  <div class="gift-header__inner">
+    {%- comment -%} Mobile only: opens the panel holding the tagline and button {%- endcomment -%}
+    <button
+      class="gift-header__toggle"
+      type="button"
+      ref="toggle"
+      on:click="/toggleMenu"
+      aria-expanded="false"
+      aria-controls="GiftHeaderPanel-{{ section.id }}"
+      aria-label="{{ 'accessibility.menu' | t }}"
+    >
+      <svg class="gift-header__icon gift-header__icon--menu" width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true" focusable="false">
+        <path d="M0 1h20M0 7h20M0 13h20" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+      <svg class="gift-header__icon gift-header__icon--close" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
+        <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+    </button>
+
+    <div class="gift-header__brand">
+      {% content_for 'block', type: 'text', id: 'brand' %}
+      <a class="gift-header__home" href="{{ routes.root_url }}" aria-label="{{ shop.name | escape }}"></a>
+    </div>
+
+    <div class="gift-header__panel" id="GiftHeaderPanel-{{ section.id }}" ref="panel">
+      <div class="gift-header__tagline">
+        {% content_for 'block', type: 'text', id: 'tagline' %}
+      </div>
+      <div class="gift-header__cta gift-cta">
+        {% content_for 'block', type: 'button', id: 'cta' %}
+      </div>
+    </div>
+  </div>
+</gift-header-component>
+
+{% stylesheet %}
+  .gift-header {
+    --gift-inset: clamp(1rem, 3.5vw, 3.125rem);
+
+    display: block;
+  }
+
+  /* Desktop: brand left, tagline centre, button right */
+  .gift-header__inner {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    column-gap: var(--gap-md);
+    min-height: 64px;
+    padding-inline: var(--gift-inset);
+  }
+
+  .gift-header__toggle {
+    display: none;
+  }
+
+  .gift-header__brand {
+    position: relative;
+    justify-self: start;
+  }
+
+  /* Makes the brand name a home link without nesting it inside the rich text */
+  .gift-header__home {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* On desktop the panel dissolves, so its two children sit in the header grid */
+  .gift-header__panel {
+    display: contents;
+  }
+
+  .gift-header__tagline {
+    justify-self: center;
+  }
+
+  .gift-header__cta {
+    justify-self: end;
+  }
+
+  /* Mobile: menu icon left, brand centred, tagline and button behind the toggle */
+  @media screen and (max-width: 749px) {
+    .gift-header__inner {
+      grid-template-columns: 44px 1fr 44px;
+      column-gap: 0;
+      min-height: 56px;
+      padding-inline: var(--padding-xs);
+    }
+
+    .gift-header__toggle {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .gift-header__toggle:focus-visible {
+      outline: var(--focus-outline-width) solid currentcolor;
+      outline-offset: var(--focus-outline-offset);
+    }
+
+    .gift-header__icon--close,
+    .gift-header__toggle[aria-expanded='true'] .gift-header__icon--menu {
+      display: none;
+    }
+
+    .gift-header__toggle[aria-expanded='true'] .gift-header__icon--close {
+      display: block;
+    }
+
+    .gift-header__brand {
+      grid-column: 2;
+      justify-self: center;
+    }
+
+    .gift-header__panel {
+      --text-align-default: center;
+
+      display: none;
+      grid-column: 1 / -1;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--gap-md);
+      padding-block: var(--padding-sm) var(--padding-lg);
+    }
+
+    .gift-header[data-open] .gift-header__panel {
+      display: flex;
+    }
+  }
+
+  /*
+    Shared call-to-action treatment: the arrow and the hover colour swap from the
+    design's button components. Any wrapper with .gift-cta gets it, so the banner
+    reuses these rules. The wrapper must set both --gift-cta-hover-* properties.
+  */
+  .gift-cta :is(.button, .button-secondary, .button-custom) {
+    grid-auto-flow: column;
+    align-items: center;
+    justify-content: center;
+    column-gap: var(--gap-md);
+    min-height: var(--gift-cta-height, 44px);
+    padding-inline: var(--padding-2xl);
+    white-space: nowrap;
+  }
+
+  .gift-cta :is(.button, .button-secondary, .button-custom)::after {
+    content: '';
+    width: 24px;
+    height: 10px;
+    background-color: currentcolor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 10' fill='none' stroke='black' stroke-width='1.2'%3E%3Cpath d='M0 5h23M19 1l4 4-4 4'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 10' fill='none' stroke='black' stroke-width='1.2'%3E%3Cpath d='M0 5h23M19 1l4 4-4 4'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+
+  .gift-cta :is(.button, .button-secondary, .button-custom):hover {
+    --button-background-color: var(--gift-cta-hover-background);
+    --button-color: var(--gift-cta-hover-text);
+    --button-border-color: var(--gift-cta-hover-background);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Gift header",
+  "tag": "header",
+  "class": "gift-header-section",
+  "enabled_on": {
+    "groups": ["header"]
+  },
+  "settings": [
+    {
+      "type": "header",
+      "content": "t:content.colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "t:settings.background_color",
+      "default": "#F5F5F5"
+    },
+    {
+      "type": "color",
+      "id": "button_hover_background",
+      "label": "Button hover background",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "button_hover_text",
+      "label": "Button hover text",
+      "default": "#FFFFFF"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Gift header",
+      "blocks": {
+        "brand": {
+          "type": "text",
+          "name": "Brand name",
+          "static": true,
+          "settings": {
+            "text": "<p><strong>TISSO VISON</strong></p>",
+            "type_preset": "custom",
+            "font": "var(--font-heading--family)",
+            "font_size": "1.25rem",
+            "letter_spacing": "loose",
+            "case": "uppercase"
+          }
+        },
+        "tagline": {
+          "type": "text",
+          "name": "Tagline",
+          "static": true,
+          "settings": {
+            "text": "<p>Find the ideal gift for your loved ones.</p>",
+            "type_preset": "custom",
+            "font": "var(--font-body--family)",
+            "font_size": "0.875rem"
+          }
+        },
+        "cta": {
+          "type": "button",
+          "name": "Button",
+          "static": true,
+          "settings": {
+            "label": "CHOOSE GIFT",
+            "style_class": "button-custom",
+            "custom_button_background": "#FFF544",
+            "custom_button_text": "#000000",
+            "custom_button_border": "#FFF544"
+          }
+        }
+      }
+    }
+  ]
+}
+{% endschema %}
