@@ -108,7 +108,7 @@ export class GiftGridComponent extends Component {
 
     this.#trigger = trigger;
     // An option with a single value needs no choice, so it starts selected.
-    this.#selected = this.#product.options.map((option) => (option.values.length === 1 ? option.values[0].name : null));
+    this.#selected = this.#product.options.map((option) => (option.values.length === 1 ? option.values[0]?.name ?? null : null));
 
     this.#render();
     this.#dialog.showModal();
@@ -516,7 +516,7 @@ export class GiftGridComponent extends Component {
 
     const missing = this.#selected.findIndex((value) => value == null);
     if (missing !== -1) {
-      this.#setMessage(`Choose your ${product.options[missing].name.toLowerCase()}`);
+      this.#setMessage(`Choose your ${(product.options[missing]?.name ?? 'option').toLowerCase()}`);
       const control = this.refs.options.querySelector(`[data-option-index="${missing}"]`);
       if (control instanceof HTMLElement) control.focus();
       return;
@@ -542,7 +542,7 @@ export class GiftGridComponent extends Component {
    * @param {{ id: number, quantity: number }[]} items
    */
   async #addToCart(items) {
-    const routes = window.Theme?.routes ?? {};
+    const routes = Theme.routes;
     const sectionIds = [...document.querySelectorAll('cart-items-component')]
       .map((element) => (element instanceof HTMLElement ? element.dataset.sectionId : ''))
       .filter(Boolean);

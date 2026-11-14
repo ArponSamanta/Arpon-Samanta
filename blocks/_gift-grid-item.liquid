@@ -47,7 +47,7 @@
         "title": {{ item_product.title | json }},
         "url": {{ item_product.url | json }},
         "description": {{ item_product.description | strip_html | strip_newlines | truncatewords: 40 | json }},
-        "image": {{ item_product.featured_image | image_url: width: 600 | json }},
+        "image": {% if item_product.featured_image %}{{ item_product.featured_image | image_url: width: 600 | json }}{% else %}null{% endif %},
         "imageAlt": {{ item_product.featured_image.alt | default: item_product.title | json }},
         "options": [
           {%- for option in item_product.options_with_values -%}
