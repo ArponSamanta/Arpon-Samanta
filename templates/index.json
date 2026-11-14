@@ -197,7 +197,7 @@
             "max_width": "normal",
             "alignment": "center",
             "type_preset": "custom",
-            "font": "var(--font-accent--family)",
+            "font": "var(--font-body--family)",
             "font_size": "2rem",
             "line_height": "normal",
             "letter_spacing": "normal",
