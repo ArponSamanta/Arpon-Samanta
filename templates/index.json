@@ -154,7 +154,8 @@
         "gift_grid_item_7zk8eh": {
           "type": "_gift-grid-item",
           "settings": {
-            "product": "",
+            "image": "shopify://shop_images/red-plaid-shirt_925x_70e9e5a8-8fc5-4d60-9a9a-cc2e0dd57cc9.jpg",
+            "product": "chequered-red-shirt",
             "x-position": 50,
             "y-position": 50
           },
@@ -163,7 +164,8 @@
         "gift_grid_item_RdzWQM": {
           "type": "_gift-grid-item",
           "settings": {
-            "product": "",
+            "image": "shopify://shop_images/leather-jacket-and-tea_925x_2490cde1-7e61-4151-9a65-de8a763bc701.jpg",
+            "product": "classic-leather-jacket",
             "x-position": 50,
             "y-position": 50
           },
@@ -172,7 +174,8 @@
         "gift_grid_item_AFFTH4": {
           "type": "_gift-grid-item",
           "settings": {
-            "product": "",
+            "image": "shopify://shop_images/casual-fashion-woman_925x_56b56608-f207-45c1-b677-bb5aa26c1c7a.jpg",
+            "product": "classic-varsity-top",
             "x-position": 50,
             "y-position": 50
           },
@@ -181,7 +184,8 @@
         "gift_grid_item_9wYN3A": {
           "type": "_gift-grid-item",
           "settings": {
-            "product": "",
+            "image": "shopify://shop_images/young-female-models-denim_925x_44c2cf9e-4030-4347-9d4a-f0e4a1479b4a.jpg",
+            "product": "dark-denim-top",
             "x-position": 50,
             "y-position": 50
           },
@@ -229,8 +233,8 @@
         "image_ratio": "1 / 1",
         "grid_gap": 16,
         "heading_gap": 40,
-        "background_color": "#FFFFFF",
-        "marker_background": "#FFFFFF",
+        "background_color": "#ffffff",
+        "marker_background": "#ffffff",
         "marker_icon": "#000000",
         "button_label": "ADD TO CART",
         "bonus_product": "",
