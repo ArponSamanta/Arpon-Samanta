@@ -159,7 +159,7 @@
           "static": true,
           "settings": {
             "label": "CHOOSE GIFT",
-            "link": "",
+            "link": "shopify://collections/all",
             "open_in_new_tab": false,
             "style_class": "button-custom",
             "custom_button_background": "#fff544",
@@ -176,9 +176,9 @@
       },
       "name": "Gift header",
       "settings": {
-        "background_color": "#F5F5F5",
+        "background_color": "#f5f5f5",
         "button_hover_background": "#000000",
-        "button_hover_text": "#FFFFFF"
+        "button_hover_text": "#ffffff"
       }
     }
   },
