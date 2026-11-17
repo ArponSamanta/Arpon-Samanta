@@ -238,7 +238,7 @@
         "marker_icon": "#000000",
         "button_label": "ADD TO CART",
         "bonus_product": "dark-winter-jacket",
-        "bonus_trigger": "Black, Medium",
+        "bonus_trigger": "M, Black",
         "padding-block-start": 60,
         "padding-block-end": 60
       }
